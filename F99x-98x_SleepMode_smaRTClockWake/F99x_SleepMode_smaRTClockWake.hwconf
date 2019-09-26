@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ASCII"?>
+<device:XMLDevice name="C8051F996-B-GU-QSOP" partId="mcu.8051.c8051.f990.c8051f996-b-gu-qsop" version="2.2.0" xmlns:device="http://www.silabs.com/ss/hwconfig/document/device.ecore" xmlns:xmi="http://www.omg.org/XMI" xmi:version="2.0">
+  <mode name="DefaultMode">
+    <property object="CLOCK_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="CLOCK_0" propertyId="clock.clockselect.selectclocksource" value="Low-Power Oscillator"/>
+    <property object="CLOCK_0" propertyId="clock.clockselect.sysclk" value="20000000"/>
+    <property object="DefaultMode" propertyId="mode.diagramLocation" value="100, 100"/>
+    <property object="FLASH_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="FLASH_0" propertyId="flash.flashscale.flashreadtimingoneshotbypass" value="SYSCLK determines flash read time (SYSCLK > 14 MHz)"/>
+    <property object="INTERRUPT_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptenable1.enabletimer3interrupt" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
+    <property object="P1.3" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P1.3" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P1.5" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P1.5" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="P1.6" propertyId="ports.settings.inputmode" value="Analog"/>
+    <property object="P1.6" propertyId="ports.settings.iomode" value="Analog I/O"/>
+    <property object="P1.6" propertyId="ports.settings.skip" value="Skipped"/>
+    <property object="P1.7" propertyId="ports.settings.inputmode" value="Analog"/>
+    <property object="P1.7" propertyId="ports.settings.iomode" value="Analog I/O"/>
+    <property object="P1.7" propertyId="ports.settings.skip" value="Skipped"/>
+    <property object="PBCFG_0" propertyId="pbcfg.settings.enablecrossbar" value="Enabled"/>
+    <property object="PCA_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequency" value="1.667 MHz"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequencyintegervalue" value="1666666.66667"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockperiod" value="600.000 nS"/>
+    <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
+    <property object="RSTSRC_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="RSTSRC_0" propertyId="rstsrc.resetsource.enablemissingclockdetectorandflag" value="Enabled"/>
+    <property object="RSTSRC_0" propertyId="rstsrc.resetsource.enablepoweronsupplymonitorresetflag,andsupplymonitorreset" value="Enabled"/>
+    <property object="RTC_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="RTC_0" propertyId="rtc.hidden.oscillatorprecisionwarning" value="No Warning"/>
+    <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue2" value="1"/>
+    <property object="RTC_0" propertyId="rtc.hidden.rtcloadcapacitanceprogrammedvalue" value="3"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.actualalarmperiod" value="2000.00 milliseconds"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.alarmprogrammedvalue" value="65536"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.rtcoscillatorfrequency" value="32768"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.targetalarmperiod" value="2000.00"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.enableautomaticloadcapacitancestepping" value="Enabled"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.enablemissingrtcdetector" value="Enabled"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.enablertcoscillatorautomaticgaincontrol" value="Enabled"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.loadcapacitanceprogrammedvalue" value="5.5 pF"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.rtcoscillatormode" value="Crystal mode"/>
+    <property object="RTC_0" propertyId="rtc.rtcconfiguration.rtcoscillatorselection" value="External Crystal"/>
+    <property object="RTC_0" propertyId="rtc.rtccontrol.enablertc" value="Enabled"/>
+    <property object="RTC_0" propertyId="rtc.rtccontrol.enablertcoscillator" value="Enabled"/>
+    <property object="RTC_0" propertyId="rtc.view.view" value="Advanced"/>
+    <property object="TIMER16_3" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_3" propertyId="timer16.control.clocksource" value="SmaRTClock"/>
+    <property object="TIMER16_3" propertyId="timer16.control.clocksourcefrequency" value="32.768 kHz"/>
+    <property object="TIMER16_3" propertyId="timer16.control.clocksourcefrequencyvalue" value="32768"/>
+    <property object="TIMER16_3" propertyId="timer16.control.clocksourceperiod" value="30.518 us"/>
+    <property object="TIMER16_3" propertyId="timer16.control.runcontrol" value="Start"/>
+    <property object="TIMER16_3" propertyId="timer16.control.selectexternalclock" value="Clock is RTC, capture on EXTOSC / 8"/>
+    <property object="TIMER16_3" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER16_3" propertyId="timer16.highbyte.highbyte" value="249"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="20"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerinitoverflowafter" value="49.988 ms"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerinitvalue" value="63898"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadoverflowfrequency" value="20.005 Hz"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadoverflowfrequencylowbyte" value="321.255 Hz"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadoverflowperiod" value="49.988 ms"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadoverflowperiodlowbyte" value="3.113 ms"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="63898"/>
+    <property object="TIMER16_3" propertyId="timer16.lowbyte.lowbyte" value="154"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="249"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="154"/>
+    <property object="TIMER16_3" propertyId="timer16.timeroverflowforperipherialsclocksource.adc0conversionstartsignal" value="20.005 Hz"/>
+    <property object="TIMER16_3" propertyId="timer16.timeroverflowforperipherialsclocksource.smbus0sckfrequency" value="6.668 Hz"/>
+    <property object="TIMER16_3" propertyId="timer16.timeroverflowforperipherialsclocksource.smbus0scllowtimeout" value="49.988 ms"/>
+    <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.clockfrequency" value="1.667 MHz"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.clockfrequency" value="1.667 MHz"/>
+  </mode>
+  <modeTransition>
+    <property object="RESET &#8594; DefaultMode" propertyId="modeTransition.target" value="DefaultMode"/>
+    <property object="RESET &#8594; DefaultMode" propertyId="modeTransition.source" value="RESET"/>
+  </modeTransition>
+</device:XMLDevice>

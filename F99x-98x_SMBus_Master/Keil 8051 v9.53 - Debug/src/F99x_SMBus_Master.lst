@@ -1,0 +1,558 @@
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE F99X_SMBUS_MASTER
+OBJECT MODULE PLACED IN .\src\F99x_SMBus_Master.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe C:\Users\Rilind\
+                    -Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SMBus_Master\src\F99x_SMBus_Master.c OMF2 SMALL DEBUG OBJECT
+                    -EXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) DEFINE(DEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:
+                    -/Users/Rilind/Desktop/System_project/Exam_Project/Exam_Project_2/F99x-98x_SMBus_Master/inc;C:/SiliconLabs/SimplicityStud
+                    -io/v4/developer/sdks/8051/v4.1.1//Device/shared/si8051base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1
+                    -//Device/C8051F990/inc) PRINT(.\src\F99x_SMBus_Master.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\F99x_SMBus_Ma
+                    -ster.OBJ)
+
+line level    source
+
+   1          
+   2          #include <compiler_defs.h>
+   3          #include <SI_C8051F990_Register_Enums.h>                  // SFR declarations
+   4          #include "InitDevice.h"
+   5          #include "F99x_SMBus_Master.h"
+   6          
+   7          
+   8          #define SLEEP        0x80              // Sleep Mode Select
+   9          #define SUSPEND      0x40              // Suspend Mode Select
+  10          #define CLEAR        0x20              // Wake-Up Flag Clear
+  11          #define RSTWK        0x10              // Reset Pin Falling Edge Wake-Up
+  12          #define RTCFWK       0x08              // SmaRTClock Failure Wake-Up
+  13          #define RTCAWK       0x04              // SmaRTClock Alarm Wake-Up
+  14          #define PMATWK       0x02              // Port Match Wake-Up
+  15          #define CPT0WK       0x01              // Comparator0 Wake-Up
+  16          
+  17          // Friendly names for the LPM function arguments
+  18          #define PORT_MATCH   PMATWK
+  19          #define RTC          RTCFWK + RTCAWK
+  20          #define COMPARATOR   CPT0WK
+  21          
+  22          
+  23          U8                                      SMB_DATA_IN;                        // Global holder for SMBus data
+  24          // All receive data is written here
+  25          
+  26          U8                                      SMB_DATA_OUT;
+  27          volatile U8             length;
+  28          U8                                      DATA_CO2_OUT[]={0x04,0x13,0x8B,0x00,0x01};
+  29          volatile U16                                    DATA_CO2_IN;
+  30          bit                                     CO2_MODE;
+  31          U8                                      SMB_REG_OUT;
+  32          U8                                      START_SMB;
+  33          U8                                      RW_Reg; // Global holder for SMBus data.
+  34          // All transmit data is read from here
+  35          
+  36          U8                                      TARGET;     // Target SMBus slave address
+  37          
+  38          volatile int32_t                        calc_hum;
+  39          volatile int32_t        temp_scaled;
+  40          volatile uint16_t                       count=0;
+  41          volatile uint32_t       count_max=7200;
+  42          int32_t                         a;
+  43          
+  44          volatile bit            SMB_BUSY;
+  45          volatile bit            ready=0;  // Software flag to indicate when the
+  46          // SMB_Read() or SMB_Write() functions
+  47          // have claimed the SMBus
+  48          int32_t gas_range;
+  49          volatile bit            SMB_RW;                   // Software flag to indicate the
+  50          volatile uint32_t cc=1;
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 2   
+
+  51                  int32_t v1;
+  52                  int32_t v2;
+  53                  int32_t v3;
+  54                  int32_t v4;
+  55          // direction of the current transfer
+  56          
+  57          SBIT (SDA, SFR_P0, 0);                 // SMBus on P0.0
+  58          SBIT (SCL, SFR_P0, 1);                 // and P0.1
+  59          SBIT (ADC_PIN, SFR_P1, 4);
+  60          
+  61          LOCATED_VARIABLE_NO_INIT (reserved, U8, SEG_XDATA, 0x0000);
+  62          
+  63          //-----------------------------------------------------------------------------
+  64          // Function PROTOTYPES
+  65          //-----------------------------------------------------------------------------
+  66          
+  67          void SMB_Write (void);
+  68          void SMB_Read (void);
+  69          void SMB_Write_Reg(U8 Addr,U8 Reg, U8 Dat);
+  70          U8 SMB_Read_Reg(U8 Addr, U8 Reg);
+  71          void UART_Init(void);
+  72          void UART_Send(char c);
+  73          void print(char* string,U32 num,char* string1);
+  74          int8_t getTemp(U16 adc);
+  75          uint8_t getHum(U16 adc);
+  76          uint32_t getGas(U16 gas_res_adc);
+  77          uint8_t getHeat(void);
+  78          void sleepMode(void);
+  79          void wakeUp(void);
+  80          U16 Read_CO2(void);
+  81          void BME680Init(void);
+  82          void ADC(void);
+  83          //-----------------------------------------------------------------------------
+  84          // SiLabs_Startup() Routine
+  85          // ----------------------------------------------------------------------------
+  86          // This function is called immediately after reset, before the initialization
+  87          // code is run in SILABS_STARTUP.A51 (which runs before main() ). This is a
+  88          // useful place to disable the watchdog timer, which is enable by default
+  89          // and may trigger before main() in some instances.
+  90          //-----------------------------------------------------------------------------
+  91          void SiLabs_Startup (void)
+  92          {
+  93   1              // Disable the watchdog here
+  94   1      }
+  95          
+  96          //-----------------------------------------------------------------------------
+  97          // main() Routine
+  98          // ----------------------------------------------------------------------------
+  99          void UART_Init(void)
+ 100          {
+ 101   1              //baud rate=57600
+ 102   1              SCON0 = 0x50;  // Asynchronous mode, 8-bit data and 1-stop bit
+ 103   1              TMOD |= 0x20;  //Timer1 in Mode2.
+ 104   1               TH1 = 256 - (20000000UL/(long)32)/(long)9600/(long)2; // Load timer value for baudrate generation
+ 105   1              //TH1 = ((0x2B) << TH1_TH1__SHIFT);
+ 106   1              TCON |= (1<<6);      //Turn ON the timer for Baud rate generation
+ 107   1      }
+ 108          
+ 109          void UART_Send(char c)
+ 110          {
+ 111   1              SBUF0 = c;      // Load the data to be transmitted
+ 112   1              while(SCON0_TI==0);   // Wait till the data is trasmitted
+ 113   1              SCON0_TI = 0;
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 3   
+
+ 114   1      }
+ 115          void print(char* string,U32 num,char* string1)
+ 116          {
+ 117   1              char c=0;
+ 118   1              char s[10];
+ 119   1              int8_t j=0;
+ 120   1              int8_t i=0;
+ 121   1              U8 len = 0;
+ 122   1              while ((c=(*(string++))) != '\0') {
+ 123   2                      UART_Send(c);
+ 124   2                      len++;
+ 125   2              }
+ 126   1              for(;j<10;j++){
+ 127   2                      *(string++)=(num%10)+'0';
+ 128   2                      s[j]=((num%10)+'0');
+ 129   2                      num=num/10;
+ 130   2                      if(num==0)
+ 131   2                      break;
+ 132   2              }
+ 133   1              for(i=(j);i>=0;i--)
+ 134   1              {
+ 135   2                      UART_Send(s[i]);
+ 136   2              }
+ 137   1              while ((c=(*(string1++))) != '\0') {
+ 138   2                              UART_Send(c);
+ 139   2                              len++;
+ 140   2                      }
+ 141   1              UART_Send('\r');
+ 142   1              //UART_Send('\n');
+ 143   1      
+ 144   1      }
+ 145          U16 Read_CO2(void)
+ 146          {
+ 147   1              uint16_t i=0;
+ 148   1              CO2_ON=ON;
+ 149   1      
+ 150   1                              // CO2 sensor needs to be on for 8 seconds to get good readings
+ 151   1              while(i<2)
+ 152   1              {
+ 153   2                      while(ready==0){sleepMode();}
+ 154   2                      ready=0;
+ 155   2                      i++;
+ 156   2              }
+ 157   1              //TH0=255;
+ 158   1              CO2_MODE=1;
+ 159   1              length=5;
+ 160   1              TARGET = 0x2A;
+ 161   1              START_SMB=1;// Define next outgoing byte
+ 162   1              SMB_Write();                     // Initiate SMBus write
+ 163   1              CO2_MODE=2;
+ 164   1              length=4;
+ 165   1              START_SMB=1;
+ 166   1              TARGET = 0x2A|0x01;
+ 167   1              SMB_Read();
+ 168   1              CO2_ON=OFF;
+ 169   1              //while(i<12){while(ready==0){sleepMode();}ready=0;i++;}
+ 170   1      
+ 171   1              return DATA_CO2_IN/2;
+ 172   1      
+ 173   1      }
+ 174          
+ 175          
+ 176          U8 SMB_Read_Reg(U8 Addr, U8 Reg)
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 4   
+
+ 177          {
+ 178   1              CO2_MODE=0;
+ 179   1              RW_Reg=0;
+ 180   1              TARGET = Addr;
+ 181   1              SMB_REG_OUT = Reg;
+ 182   1              START_SMB=1;// Define next outgoing byte
+ 183   1              SMB_Write();                     // Initiate SMBus write
+ 184   1              START_SMB=1;
+ 185   1              TARGET = Addr|0x01;             // Target the F3xx/Si8250 Slave for next                                                                   // SMBus transfer
+ 186   1              SMB_Read();
+ 187   1              return SMB_DATA_IN;
+ 188   1      
+ 189   1      }
+ 190          
+ 191          void SMB_Write_Reg(U8 Addr,U8 Reg, U8 Dat)
+ 192          {
+ 193   1              CO2_MODE=0;
+ 194   1              RW_Reg=1;
+ 195   1              TARGET = Addr;             // Target the F3xx/Si8250 Slave for next
+ 196   1              START_SMB=1;
+ 197   1              SMB_DATA_OUT = Dat;
+ 198   1              SMB_REG_OUT = Reg;// SMBus transfer
+ 199   1              SMB_Write();
+ 200   1      
+ 201   1      }
+ 202          int8_t getTemp(U16 adc)
+ 203          {
+ 204   1              int32_t                         t_fine;
+ 205   1              int32_t                         calc_result;
+ 206   1              int32_t                         var1;
+ 207   1              int32_t                         var2;
+ 208   1              int32_t                         var3;
+ 209   1              const U16                       par_t1=26487;
+ 210   1              const int16_t           par_t2=26223;
+ 211   1              const int8_t            par_t3=3;// Dummy variable counters
+ 212   1              var1 = ((int16_t)adc << 1) - ((int16_t)par_t1 << 1);
+ 213   1              var2 = (var1 *  (int32_t)par_t2) >> 11;
+ 214   1              var3 = ((var1 >> 1) * (var1 >> 1)) >> 12;
+ 215   1              var3 = ((var3) * ((int16_t)par_t3 << 4)) >> 14;
+ 216   1              t_fine =(var2 + var3);
+ 217   1              temp_scaled =(((t_fine * 5) + 128) >> 8);
+ 218   1              calc_result=temp_scaled/100;
+ 219   1              return calc_result;
+ 220   1      }
+ 221          uint8_t getHum(U16 adc)
+ 222          {
+ 223   1              volatile int32_t                        var3;
+ 224   1              volatile int32_t                        var4;
+ 225   1              volatile int32_t                        var5;
+ 226   1              volatile int32_t                        var6;
+ 227   1      
+ 228   1              const uint16_t par_h1=((uint16_t)SMB_Read_Reg(0xEE,0xe3)<<4)|(uint16_t)(SMB_Read_Reg(0xEE,0xe2)&0x0F);
+ 229   1              const uint16_t par_h2=((uint16_t)SMB_Read_Reg(0xEE,0xe1)<<4)|(uint16_t)SMB_Read_Reg(0xEE,0xe2)>>4;
+ 230   1              const int8_t par_h3=SMB_Read_Reg(0xEE,0xe4);
+ 231   1              const int8_t par_h4=SMB_Read_Reg(0xEE,0xe5);
+ 232   1              const int8_t par_h5=SMB_Read_Reg(0xEE,0xe6);
+ 233   1              const uint8_t par_h6=SMB_Read_Reg(0xEE,0xe7);
+ 234   1              const int8_t par_h7=SMB_Read_Reg(0xEE,0xe8);
+ 235   1              //print("",par_h3,"");
+ 236   1      
+ 237   1                      //temp_scaled=2350;
+ 238   1              var4 = (((int32_t)adc) - ((int32_t) par_h1<<4 ))- (((temp_scaled * (int32_t) par_h3) / ((int32_t) 100)) >
+             -> 1);
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 5   
+
+ 239   1              //print("",par_h3,"");
+ 240   1              var5 = ((int32_t) par_h2 * ((((int32_t)temp_scaled * (int32_t) par_h4) / ((int32_t) 100))
+ 241   1                                                      + ((((int32_t)temp_scaled * (((int32_t)temp_scaled * (int32_t) par_h5) / ((int32_t) 100))) >> 6)
+ 242   1                                                              / ((int32_t) 100)) + (int32_t) (1 << 14))) >> 10;//
+ 243   1              //print("tt: ",temp_scaled);
+ 244   1              //print("2: ",hvar2);
+ 245   1              var3 = var4 * var5;
+ 246   1              //print("3: ",hvar3);
+ 247   1              var4 = (int32_t)par_h6 << 7;
+ 248   1              //print("4: ",hvar4);
+ 249   1              var4 = ((var4) + ((temp_scaled * (int32_t) par_h7) / ((int32_t) 100))) >> 4;
+ 250   1              //print("4: ",hvar4);
+ 251   1              var5 = ((var3 >> 14) * (var3 >> 14)) >> 10;
+ 252   1              //print("5: ",hvar5);
+ 253   1              var6 = (var4 * var5) >> 1;
+ 254   1              //print("6: ",hvar6);
+ 255   1              calc_hum = (((var3 + var6) >> 10) * ((int32_t) 1000)) >> 12;
+ 256   1              temp_scaled=calc_hum;
+ 257   1              if (calc_hum > 100000) // Cap at 100%rH
+ 258   1                      calc_hum = 100000;
+ 259   1              else if (calc_hum < 0)
+ 260   1                      calc_hum = 0;
+ 261   1              calc_hum/=1000;
+ 262   1      
+ 263   1              //calc_hum= ((uint32_t)hum_adc*(uint32_t)100)/65535;
+ 264   1              return calc_hum;
+ 265   1      
+ 266   1      }
+ 267          // calculate VOC value value
+ 268          uint32_t getGas(U16 gas_res_adc)
+ 269          {
+ 270   1      
+ 271   1              volatile        float                   value1;
+ 272   1              volatile        float                   value2;
+ 273   1              volatile        float                   var1;
+ 274   1              volatile        float                   var2;
+ 275   1              volatile        float                   var3;
+ 276   1      
+ 277   1              volatile        uint16_t range_sw_err=((uint16_t)SMB_Read_Reg(0xEE,0x04)&(uint16_t)0xf0)/16;
+ 278   1              volatile        int32_t calc_gas_res;
+ 279   1      
+ 280   1      
+ 281   1                              /**Look up table 2 for the possible gas range values */
+ 282   1      
+ 283   1      
+ 284   1                      //print("gas_res_adc: ",gas_res_adc);
+ 285   1                      gas_range =(uint16_t)SMB_Read_Reg(0xEE,0x2B)&0x0F;
+ 286   1                      //print("gas_range: ",gas_range);
+ 287   1                      /**Look up table 1 for the possible gas range values */
+ 288   1                      /**Look up table 2 for the possible gas range values */
+ 289   1                      if(gas_range==5||gas_range==13)
+ 290   1                      {
+ 291   2                              value1=-1.0;
+ 292   2                      }else if(gas_range==7)
+ 293   1                      {
+ 294   2                              value1=-0.8;
+ 295   2                      }else if(gas_range==10)
+ 296   1                      {
+ 297   2                              value1=-0.2;
+ 298   2                      }else if(gas_range==11)
+ 299   1                      {
+ 300   2                              value1=-0.5;
+ 301   2                      }else{
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 6   
+
+ 302   2                              value1=0.0;
+ 303   2                      }
+ 304   1      
+ 305   1                      if(gas_range==4)
+ 306   1                      {
+ 307   2                              value2=0.1;
+ 308   2                      }else if(gas_range==5)
+ 309   1                      {
+ 310   2                              value2=0.7;
+ 311   2                      }else if(gas_range==7)
+ 312   1                      {
+ 313   2                              value2=-0.8;
+ 314   2                      }else if(gas_range==8)
+ 315   1                      {
+ 316   2                              value2=-0.1;
+ 317   2                      }else{
+ 318   2                              value2=0.0;
+ 319   2                      }
+ 320   1                              var1 = (1340.0f + (5.0f * range_sw_err));
+ 321   1                              var2 = (var1) * (1.0f + value1/100.0f);
+ 322   1                              var3 = 1.0f + (value2/100.0f);
+ 323   1                              calc_gas_res = 1.0f / (float)(var3 * (0.000000125f) * (float)(1 << gas_range) * (((((float)gas_res_adc)
+ 324   1                                      - 512.0f)/var2) + 1.0f));
+ 325   1      
+ 326   1      
+ 327   1                      return calc_gas_res;
+ 328   1      
+ 329   1      }
+ 330          // get Tempeture data for gas measurement
+ 331          uint8_t getHeat(void)
+ 332          {
+ 333   1      
+ 334   1              volatile int32_t                        var1;
+ 335   1              volatile int32_t                        var2;
+ 336   1              volatile int32_t                        var3;
+ 337   1              volatile int32_t                        var4;
+ 338   1              volatile int32_t                        var5;
+ 339   1      
+ 340   1              volatile uint16_t                       res_heat_range=(uint16_t)(SMB_Read_Reg(0xEE,0x02)&0x30)/16;
+ 341   1              volatile int8_t                         res_heat_val=(int8_t)(SMB_Read_Reg(0xEE,0x00));
+ 342   1              volatile U8                             par_g1=124;
+ 343   1              volatile U16                            par_g2=250855;
+ 344   1              volatile U8                             par_g3=318;// Dummy variable counters
+ 345   1      
+ 346   1              volatile uint8_t                        heatr_res;
+ 347   1              volatile int32_t                        heatr_res_x100;
+ 348   1              //volatile int16_t                      temp=(uint16_t)SMB_Read_Reg(0xEE,0x5A);
+ 349   1              volatile int16_t                        temp=350;
+ 350   1      
+ 351   1      
+ 352   1      
+ 353   1              if (temp > 400) /* Cap temperature */
+ 354   1                      temp = 400;
+ 355   1              if(!temp_scaled)
+ 356   1                      temp_scaled=2400;
+ 357   1              var1 = (int32_t)(((int32_t) temp_scaled * (int32_t)par_g3) / (int32_t)1000) * 256;
+ 358   1              var2 = (par_g1 + 784) * (((((par_g2 + 154009) * temp * 5) / 100) + 3276800) / 10);
+ 359   1              var3 = var1 + (var2 / 2);
+ 360   1              var4 = (var3 / (res_heat_range + 4));
+ 361   1              var5 = (131 * res_heat_val) + 65536;
+ 362   1              heatr_res_x100 = (int32_t) (((var4 / var5) - 250) * 34);
+ 363   1              heatr_res = (uint8_t) ((heatr_res_x100 + 50) / 100);
+ 364   1      
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 7   
+
+ 365   1              return heatr_res;
+ 366   1      }
+ 367          // put MC to sleep
+ 368          void sleepMode(void)
+ 369          {
+ 370   1              PMU0CF|= (1<<0);
+ 371   1      
+ 372   1      }
+ 373          // wake up MC
+ 374          void wakeUp(void)
+ 375          {
+ 376   1              PMU0CF&= ~(1<<0);
+ 377   1      
+ 378   1      }
+ 379          // Initilize The ADC
+ 380          void ADC(void)
+ 381          {
+ 382   1              ADC0CN = ADC0CN_ADEN__DISABLED | ADC0CN_ADBMEN__BURST_ENABLED
+ 383   1                               | ADC0CN_ADCM__TIMER2;
+ 384   1                      ADC0MX = ADC0MX_ADC0MX__ADC0P7;
+ 385   1                      ADC0CF = ADC0CF_AD8BE__NORMAL | ADC0CF_ADGN__GAIN_0P5 | (2 << ADC0CF_ADSC__SHIFT)
+ 386   1                               | ADC0CF_ADTM__TRACK_NORMAL;
+ 387   1                      ADC0AC = ADC0AC_ADRPT__ACC_4 | ADC0AC_AD12BE__12_BIT_ENABLED | ADC0AC_ADAE__ACC_ENABLED
+ 388   1                               | ADC0AC_ADSJST__RIGHT_NO_SHIFT;
+ 389   1                      ADC0GTH = (0 << ADC0GTH_ADC0GTH__SHIFT);
+ 390   1                      ADC0GTL = (0 << ADC0GTL_ADC0GTL__SHIFT);
+ 391   1      }
+ 392          
+ 393          // Initilaize the BME680 Sensor
+ 394          void BME680Init(void)
+ 395          {
+ 396   1      
+ 397   1              uint32_t i=0;;
+ 398   1              SMB_Write_Reg(0xEE,0xE0,0xB6);// reset
+ 399   1              SMB_Write_Reg(0xEE,0x74,0x24);// temp:1x, pressure:1x
+ 400   1              SMB_Write_Reg(0xEE,0x72,0x01);// hum
+ 401   1              SMB_Write_Reg(0xEE,0x71,0x10);// run_gas
+ 402   1              SMB_Write_Reg(0xEE,0x5A,getHeat()); // set heater temp
+ 403   1              SMB_Write_Reg(0xEE,0x64,0x06); //100 ms heater on time 66=150 ms
+ 404   1              SMB_Write_Reg(0xEE,0x74,0x25);// trigger forced mode
+ 405   1      
+ 406   1      }
+ 407          
+ 408          int main (void)
+ 409          {
+ 410   1              U16  i;
+ 411   1              enter_DefaultMode_from_RESET();
+ 412   1              // If slave is holding SDA low because of an improper SMBus reset or error
+ 413   1              while(!SDA)
+ 414   1              {
+ 415   2                      // Provide clock pulses to allow the slave to advance out
+ 416   2                      // of its current state. This will allow it to release SDA.
+ 417   2                      XBR2 = 0x40;                     // Enable Crossbar
+ 418   2                      SCL = 0;                         // Drive the clock low
+ 419   2                      for(i = 0; i < 255; i++);        // Hold the clock low
+ 420   2                      SCL = 1;                         // Release the clock
+ 421   2                      while(!SCL);                     // Wait for open-drain
+ 422   2                      // clock output to rise
+ 423   2                      for(i = 0; i < 10; i++);         // Hold the clock high
+ 424   2                      XBR2 = 0x00;                     // Disable Crossbar
+ 425   2              }
+ 426   1              enter_Mode2_from_DefaultMode();
+ 427   1              //UART_Init();
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 8   
+
+ 428   1              ADC();
+ 429   1              CO2_ON=OFF;
+ 430   1              BME680_ON=OFF;
+ 431   1              ADC_PIN=0;
+ 432   1              while(1)
+ 433   1              {
+ 434   2                      while(ready==0){sleepMode();}
+ 435   2                      if(count%2==0)
+ 436   2                      {
+ 437   3                  LUX_ON=ON;
+ 438   3                      if(ADC0>600)
+ 439   3                      {
+ 440   4                              LUX_ON=OFF;
+ 441   4                                      BME680_ON=ON;
+ 442   4                                      BME680Init();
+ 443   4                                      while(SMB_Read_Reg(0xEE,0x1D)&(1<<5)){;;}
+ 444   4                                      v1=getTemp(((uint16_t)SMB_Read_Reg(0xEE,0x22)<<8)|((uint16_t)(SMB_Read_Reg(0xEE,0x23))));
+ 445   4                                      v2=getHum(((uint16_t)SMB_Read_Reg(0xEE,0x25)<<8)|(uint16_t)SMB_Read_Reg(0xEE,0x26));
+ 446   4                                      BME680_ON=OFF;
+ 447   4                                      if(count>=(count_max/2))
+ 448   4                                      {
+ 449   5                                              BME680_ON=ON;
+ 450   5                                              BME680Init();
+ 451   5                                              while(SMB_Read_Reg(0xEE,0x1D)&(1<<5)){;;}
+ 452   5                                              v3=getGas(((uint16_t)SMB_Read_Reg(0xEE,0x2A)<<2)|((uint16_t)SMB_Read_Reg(0xEE,0x2B)>>6));
+ 453   5                                              BME680_ON=OFF;
+ 454   5                                      }
+ 455   4      
+ 456   4                                      if(count>=count_max)
+ 457   4                                      {
+ 458   5                                              v4=Read_CO2();
+ 459   5                                      }
+ 460   4                      }
+ 461   3      
+ 462   3      
+ 463   3                      }
+ 464   2                      ready=0;
+ 465   2                      count++;
+ 466   2                      if(count>=count_max*10)
+ 467   2                      {
+ 468   3                              count=0;
+ 469   3                      }
+ 470   2      
+ 471   2              }
+ 472   1      
+ 473   1              return 0;
+ 474   1      }
+ 475          
+ 476          void SMB_Write (void)
+ 477          {
+ 478   1              while (SMB_BUSY);                   // Wait for SMBus to be free.
+ 479   1              SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+ 480   1              SMB_RW = 0;                         // Mark this transfer as a WRITE
+ 481   1              SMB0CN_STA = 1;                            // Start transfer
+ 482   1              while (SMB_BUSY);
+ 483   1      
+ 484   1      }
+ 485          void SMB_Read (void)
+ 486          {
+ 487   1              while (SMB_BUSY);               // Wait for transfer to complete
+ 488   1              SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+ 489   1              SMB_RW = 1;                         // Mark this transfer as a READ
+ 490   1              SMB0CN_STA = 1;                            // Start transfer
+C51 COMPILER V9.53.0.0   F99X_SMBUS_MASTER                                                 05/16/2018 14:18:29 PAGE 9   
+
+ 491   1              while (SMB_BUSY);                   // Wait for transfer to complete
+ 492   1      }
+ 493          
+ 494          INTERRUPT (TIMER2_ISR, TIMER2_IRQn)
+ 495          {
+ 496   1                      wakeUp();
+ 497   1                      cc=0;
+ 498   1                      count++;
+ 499   1                      ready=1;
+ 500   1                      TMR2CN &= ~0x80;
+ 501   1      
+ 502   1      }
+ 503          
+ 504          //-----------------------------------------------------------------------------
+ 505          // End Of File
+ 506          //-----------------------------------------------------------------------------
+*** WARNING C294 IN LINE 473 OF C:\Users\Rilind\Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SMBus_Master
+             -\src\F99x_SMBus_Master.c: unreachable code
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3020    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     56     143
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      4    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

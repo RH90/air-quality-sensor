@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ASCII"?>
+<device:XMLDevice name="C8051F996-B-GU-QSOP" partId="mcu.8051.c8051.f990.c8051f996-b-gu-qsop" xmlns:device="http://www.silabs.com/ss/hwconfig/document/device.ecore" xmlns:xmi="http://www.omg.org/XMI" xmi:version="2.0">
+  <mode name="DefaultMode">
+    <property object="DefaultMode" propertyId="mode.diagramLocation" value="100, 100"/>
+    <property object="INTERRUPT_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enabletimer0interrupt" value="Enabled"/>
+    <property object="P1.3" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
+    <property object="P1.3" propertyId="ports.settings.outputmode" value="Push-pull"/>
+    <property object="PBCFG_0" propertyId="pbcfg.settings.enablecrossbar" value="Enabled"/>
+    <property object="PCA_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequency" value="208.333 kHz"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequencyintegervalue" value="208333.333333"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockperiod" value="4.800 uS"/>
+    <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
+    <property object="TIMER01_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0highbyte.timer0highbyte" value="245"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0lowbyte.timer0lowbyte" value="216"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode0:13bitcountertimer.clocksourcefrequency" value="52.083 kHz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode0:13bitcountertimer.clocksourceperiod" value="19.200 us"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode0:13bitcountertimer.timerinitoverflowafter" value="157.287 ms"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode1:16bitcountertimer.clocksourcefrequency" value="52.083 kHz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode1:16bitcountertimer.clocksourceperiod" value="19.200 us"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode1:16bitcountertimer.timerinitoverflowafter" value="49.920 ms"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0mode1:16bitcountertimer.timerinitvalue" value="62936"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0overflowforperipherals.adc0conversionstartsignal" value="0 Hz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0overflowforperipherals.pca0clocksource" value="0 Hz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer0overflowforperipherals.smbus0sckfrequency" value="0 Hz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode0:13bitcountertimer.clocksourcefrequency" value="52.083 kHz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode0:13bitcountertimer.clocksourceperiod" value="19.200 us"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode0:13bitcountertimer.timerinitoverflowafter" value="157.287 ms"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode1:16bitcountertimer.clocksourcefrequency" value="0 Hz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode1:16bitcountertimer.clocksourceperiod" value="0 ns"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode1:16bitcountertimer.timerinitoverflowafter" value="0 ns"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1overflowforperipherals.smbus0sckfrequency" value="0 Hz"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1overflowforperipherals.uart0baudrate" value="0 Hz"/>
+    <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer01prescale" value="SYSCLK / 48"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.clockfrequency" value="52.083 kHz"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.mode" value="Mode 1, 16-bit Counter/Timer"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.timerswitch1:runcontrol" value="Start"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer01control.timer0runcontrol" value="Start"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.clockfrequency" value="52.083 kHz"/>
+  </mode>
+  <modeTransition>
+    <property object="RESET &#8594; DefaultMode" propertyId="modeTransition.target" value="DefaultMode"/>
+    <property object="RESET &#8594; DefaultMode" propertyId="modeTransition.source" value="RESET"/>
+  </modeTransition>
+</device:XMLDevice>

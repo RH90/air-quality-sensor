@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Delete 3 resources" deleteContents="false" description="Delete 3 resources" element1="/F99x-98x_SMBus_Master/src/F99x_SMBus_Master.c" element2="/F99x-98x_SMBus_Master/src/InitDevice.c" element3="/F99x-98x_SMBus_Master/src/Interrupts.c" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="3" stamp="1523204011764"/>&#x0A;<refactoring comment="Delete 2 resources" deleteContents="false" description="Delete 2 resources" element1="/F99x-98x_SMBus_Master/inc/F99x_SMBus_Master.h" element2="/F99x-98x_SMBus_Master/inc/InitDevice.h" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="2" stamp="1523204041085"/>
+</session>

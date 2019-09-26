@@ -1,0 +1,240 @@
+C51 COMPILER V9.53.0.0   F99X_SLEEPMODE_SMARTCLOCKWAKE                                     05/11/2018 21:29:54 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE F99X_SLEEPMODE_SMARTCLOCKWAKE
+OBJECT MODULE PLACED IN .\src\F99x_SleepMode_smaRTClockWake.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe C:\Users\Rilind\
+                    -Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SleepMode_smaRTClockWake\src\F99x_SleepMode_smaRTClockWake.c
+                    - OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) DEFINE(DEBUG=1) INTVECTOR(0X00
+                    -00) INTPROMOTE INCDIR(C:/Users/Rilind/Desktop/System_project/Exam_Project/Exam_Project_2/F99x-98x_SleepMode_smaRTClockWa
+                    -ke/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/shared/si8051base;C:/SiliconLabs/Simplicity
+                    -Studio/v4/developer/sdks/8051/v4.1.1//Device/C8051F990/inc) PRINT(.\src\F99x_SleepMode_smaRTClockWake.lst) COND PAGEWIDT
+                    -H(120) PAGELENGTH(65) OBJECT(.\src\F99x_SleepMode_smaRTClockWake.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // F99x_SleepMode_smaRTClockWake.c
+   3          //-----------------------------------------------------------------------------
+   4          // Copyright 2014 Silicon Laboratories, Inc.
+   5          // http://developer.silabs.com/legal/version/v11/Silicon_Labs_Software_License_Agreement.txt
+   6          //
+   7          // Program Description:
+   8          //
+   9          // This program flashes the red LED on the C8051F996 target board about
+  10          // five times a second using the interrupt handler for Timer2 when the
+  11          // MCU is awake.
+  12          //
+  13          // The smaRTClock is configured to generate a wake-up event every 2 seconds.
+  14          // The device will toggle between Sleep/Suspend mode and Normal mode. In
+  15          // the low power state, the Yellow LED will be turned on.
+  16          //
+  17          // If a smaRTClock oscillator failure occurs, both LEDs will remain on
+  18          // and the device will be in a high power state.
+  19          //
+  20          // How To Test:
+  21          //
+  22          // 1) Ensure that jumpers are placed on the following:
+  23          //       J8:   P1.5/LED1.5
+  24          //             P1.3/LED1.3
+  25          //       J11:  PWR/WALL_PWR
+  26          //       J17:  VDD_PIN/PWR
+  27          // 2) Connect the USB Debug Adapter to J4.
+  28          // 3) Turn the POWER switch (SW5) to the "ON" position.
+  29          // 4) Compile and download code to a 'F99x device on a C8051F99x-TB development
+  30          //    board by selecting Run -> Debug from the menus, clicking the Debug button
+  31          //    in the quick menu, or pressing F11.
+  32          // 5) Run the code by selecting Run -> Resume from the menus, clicking the
+  33          //    Resume button in the quick menu, or pressing F8.
+  34          // 6) Run the program. The Red LED will blink when the device is awake, the
+  35          //    Yellow LED will be ON when the device is asleep.
+  36          //
+  37          //
+  38          // Target:         C8051F99x-C8051F98x
+  39          // Tool chain:     Silicon Labs Studio / Keil C51 9.51
+  40          // Command Line:   None
+  41          //
+  42          // Release 1.1 (BL)
+  43          //    - Updated Description / How to Test
+  44          //    - 13 JAN 2014
+  45          //
+  46          // Release 1.0
+  47          //    - Initial Revision (FB)
+  48          //    - 19 MAY 2010
+  49          //
+  50          
+C51 COMPILER V9.53.0.0   F99X_SLEEPMODE_SMARTCLOCKWAKE                                     05/11/2018 21:29:54 PAGE 2   
+
+  51          //-----------------------------------------------------------------------------
+  52          // Includes
+  53          //-----------------------------------------------------------------------------
+  54          #include <compiler_defs.h>
+  55          #include <SI_C8051F990_Register_Enums.h>                  // SFR declarations
+  56          #include "InitDevice.h"
+  57          #include "C8051F990_lib.h"             // library declarations
+  58          #include "power.h"
+  59          #include "SmarRTClock.h"
+*** WARNING C318 IN LINE 59 OF C:\Users\Rilind\Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SleepMode_sma
+             -RTClockWake\src\F99x_SleepMode_smaRTClockWake.c: can't open file 'SmarRTClock.h'
+  60          //-----------------------------------------------------------------------------
+  61          // Pin Declarations
+  62          //-----------------------------------------------------------------------------
+  63          
+  64          SBIT (RED_LED,     SFR_P1, 5);         // Generates a 1ms trigger pulse
+  65          SBIT (YELLOW_LED,  SFR_P1, 3);         // Used to show analog acquisition time
+  66          SBIT (SW2,        SFR_P0, 2);          // SW2 == 0 means switch pressed
+  67          SBIT (SW3,        SFR_P0, 3);          // SW3 == 0 means switch pressed
+  68          
+  69          //-----------------------------------------------------------------------------
+  70          // Global Variables
+  71          //-----------------------------------------------------------------------------
+  72          bit Blink_LED = 0;
+  73          
+  74          //-----------------------------------------------------------------------------
+  75          // Global Constants
+  76          //-----------------------------------------------------------------------------
+  77          
+  78          #define LED_ON           0
+  79          #define LED_OFF          1
+  80          
+  81          //-----------------------------------------------------------------------------
+  82          // Global VARIABLES
+  83          //-----------------------------------------------------------------------------
+  84          LOCATED_VARIABLE_NO_INIT (reserved, U8, SEG_XDATA, 0x0000);
+  85          
+  86          //-----------------------------------------------------------------------------
+  87          // SiLabs_Startup() Routine
+  88          // ----------------------------------------------------------------------------
+  89          // This function is called immediately after reset, before the initialization
+  90          // code is run in SILABS_STARTUP.A51 (which runs before main() ). This is a
+  91          // useful place to disable the watchdog timer, which is enable by default
+  92          // and may trigger before main() in some instances.
+  93          //-----------------------------------------------------------------------------
+  94          void SiLabs_Startup (void)
+  95          {
+  96   1        // Disable the watchdog here
+  97   1      }
+  98           
+  99          //-----------------------------------------------------------------------------
+ 100          // main() Routine
+ 101          // ----------------------------------------------------------------------------
+ 102          int main (void)
+ 103          {
+ 104   1      
+ 105   1      
+ 106   1              while(!SW2);                        // Debug Trap -- Prevents the system
+ 107   1                                                                                 // from entering sleep mode after
+ 108   1                                                                                 // a reset if Switch 2 is pressed.
+ 109   1              //Enter default mode
+ 110   1              enter_DefaultMode_from_RESET();
+ 111   1      
+C51 COMPILER V9.53.0.0   F99X_SLEEPMODE_SMARTCLOCKWAKE                                     05/11/2018 21:29:54 PAGE 3   
+
+ 112   1              YELLOW_LED = LED_OFF;               // Initilize the state of the signals
+ 113   1              RED_LED = LED_OFF;
+ 114   1              RTC0CN_Local = 0xC0;                // Initialize Local Copy of RTC0CN
+ 115   1      
+ 116   1              RTC0CN_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+ 117   1      
+ 118   1              LPM_Init();                         // Initialize Power Management
+ 119   1              LPM_Enable_Wakeup(RTC);
+ 120   1      
+ 121   1              RTC_Alarm = 1;                      // Set the RTC Alarm Flag on startup
+ 122   1      
+ 123   1              //----------------------------------
+ 124   1              // Main Application Loop
+ 125   1              //----------------------------------
+ 126   1              while (1)
+ 127   1              {
+ 128   2      
+ 129   2                //-----------------------------------------------------------------------
+ 130   2                // Task #1 - Handle RTC Failure
+ 131   2                //-----------------------------------------------------------------------
+ 132   2                if(RTC_Failure)
+ 133   2                {
+ 134   3                       RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
+ 135   3                                                                                 // that we have detected an RTC failure
+ 136   3                                                                                 // and are handling the event
+ 137   3      
+ 138   3                       // Do something...RTC Has Stopped Oscillating
+ 139   3                       while(1);                     // <Insert Handler Code Here>
+ 140   3                }
+ 141   2      
+ 142   2                //-----------------------------------------------------------------------
+ 143   2                // Task #2 - Handle RTC Alarm
+ 144   2                //-----------------------------------------------------------------------
+ 145   2                if(RTC_Alarm)
+ 146   2                {
+ 147   3      
+ 148   3                       RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
+ 149   3                                                                                 // that we have detected an alarm
+ 150   3                                                                                 // and are handling the alarm event
+ 151   3      
+ 152   3                       Blink_LED = !Blink_LED;       // Change blinking state
+ 153   3      
+ 154   3                       if(Blink_LED)
+ 155   3                       {
+ 156   4                              // Adjust LED state for active mode
+ 157   4                              YELLOW_LED = LED_OFF;
+ 158   4                              RED_LED = LED_ON;
+ 159   4      
+ 160   4                       }
+ 161   3                       else
+ 162   3                       {
+ 163   4                              // Adjust LED state for sleep mode
+ 164   4                              RED_LED = LED_OFF;
+ 165   4                              YELLOW_LED = LED_ON;
+ 166   4                       }
+ 167   3      
+ 168   3                }
+ 169   2      
+ 170   2                //-----------------------------------------------------------------------
+ 171   2                // Task #3 - Sleep for the remainder of the interval
+ 172   2                //-----------------------------------------------------------------------
+ 173   2                // If blinking, stay awake, otherwise sleep
+ 174   2      
+C51 COMPILER V9.53.0.0   F99X_SLEEPMODE_SMARTCLOCKWAKE                                     05/11/2018 21:29:54 PAGE 4   
+
+ 175   2                if(Blink_LED)
+ 176   2                {
+ 177   3                       // Wait for next alarm or clock failure, then clear flags
+ 178   3                       while((PMU0CF & RTCAWK) == 0);
+ 179   3                       if(PMU0CF & RTCAWK) RTC_Alarm = 1;
+ 180   3                       if(PMU0CF & RTCFWK) RTC_Failure = 1;
+ 181   3                       PMU0CF = 0x20;
+ 182   3      
+ 183   3                }
+ 184   2                else
+ 185   2                {
+ 186   3                       // Place the device in Sleep Mode
+ 187   3                       P0 &= ~0x01;
+ 188   3                       LPM(SLEEP);                      // Enter Sleep Until Next Alarm
+ 189   3                       P0 |= 0x01;
+ 190   3      
+ 191   3                }
+ 192   2      
+ 193   2              }
+ 194   1      
+ 195   1              // NOTREACHED
+ 196   1              return 0;
+ 197   1      }
+*** WARNING C294 IN LINE 196 OF C:\Users\Rilind\Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SleepMode_sm
+             -aRTClockWake\src\F99x_SleepMode_smaRTClockWake.c: unreachable code
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    103    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

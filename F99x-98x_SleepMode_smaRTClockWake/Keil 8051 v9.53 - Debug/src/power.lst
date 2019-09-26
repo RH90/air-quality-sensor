@@ -1,0 +1,237 @@
+C51 COMPILER V9.53.0.0   POWER                                                             04/29/2018 23:54:57 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE POWER
+OBJECT MODULE PLACED IN .\src\power.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe C:\Users\Rilind\
+                    -Desktop\System_project\Exam_Project\Exam_Project_2\F99x-98x_SleepMode_smaRTClockWake\src\power.c OMF2 SMALL DEBUG OBJECT
+                    -EXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) DEFINE(DEBUG=1) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:
+                    -/Users/Rilind/Desktop/System_project/Exam_Project/Exam_Project_2/F99x-98x_SleepMode_smaRTClockWake/inc;C:/SiliconLabs/Si
+                    -mplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/shared/si8051base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks
+                    -/8051/v4.1.1//Device/C8051F990/inc) PRINT(.\src\power.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\power.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // power.c
+   3          //-----------------------------------------------------------------------------
+   4          // Copyright 2014 Silicon Laboratories, Inc.
+   5          // http://developer.silabs.com/legal/version/v11/Silicon_Labs_Software_License_Agreement.txt
+   6          //
+   7          // Program Description:
+   8          //
+   9          // Driver for the power management function.
+  10          //
+  11          // Target:         C8051F99x-C8051F98x
+  12          // Tool chain:     Generic
+  13          // Command Line:   None
+  14          //
+  15          // Release 1.0
+  16          //    - Initial Revision (FB)
+  17          //    - 19 MAY 2010
+  18          //
+  19          
+  20          //-----------------------------------------------------------------------------
+  21          // Includes
+  22          //-----------------------------------------------------------------------------
+  23          #include "SI_C8051F990_Register_Enums.h"
+  24          #include "C8051F990_lib.h"
+  25          
+  26          //-----------------------------------------------------------------------------
+  27          // Global Variables
+  28          //-----------------------------------------------------------------------------
+  29          
+  30          // Variables used for the RTC interface
+  31          U8 PMU0CF_Local;                       // Holds the desired Wake-up sources
+  32           
+  33          // Define Wake-Up Flags
+  34          U8 RTC_Alarm;
+  35          U8 RTC_Failure;
+  36          U8 Comparator_Wakeup;
+  37          U8 Port_Match_Wakeup;
+  38          
+  39          //-----------------------------------------------------------------------------
+  40          // Function PROTOTYPES
+  41          //-----------------------------------------------------------------------------
+  42          void LPM(U8 mode);
+  43          void LPM_Init(void);
+  44          void LPM_Enable_Wakeup (U8 wakeup);
+  45          void LPM_Disable_Wakeup (U8 wakeup);
+  46          
+  47          //-----------------------------------------------------------------------------
+  48          // LPM_Init ()
+  49          //-----------------------------------------------------------------------------
+  50          //
+  51          // Return Value : None
+C51 COMPILER V9.53.0.0   POWER                                                             04/29/2018 23:54:57 PAGE 2   
+
+  52          // Parameters   : None
+  53          //
+  54          // This function will initialize the low power functionality
+  55          //
+  56          //-----------------------------------------------------------------------------
+  57          void LPM_Init (void)
+  58          {
+  59   1        PMU0CF = CLEAR;
+  60   1        PMU0CF_Local = 0;
+  61   1        RTC_Alarm = 0;
+  62   1        RTC_Failure = 0;
+  63   1        Comparator_Wakeup = 0;
+  64   1        Port_Match_Wakeup = 0;
+  65   1      }
+  66          
+  67          //-----------------------------------------------------------------------------
+  68          // LPM_Enable_Wakeup ()
+  69          //-----------------------------------------------------------------------------
+  70          //
+  71          // Return Value : None
+  72          // Parameters   : None
+  73          //
+  74          // This function will enable wakeup sources
+  75          //
+  76          //-----------------------------------------------------------------------------
+  77          void LPM_Enable_Wakeup (U8 wakeup)
+  78          {
+  79   1        PMU0CF_Local |= (wakeup & (RTC | PORT_MATCH | COMPARATOR));
+  80   1      }
+  81          
+  82          //-----------------------------------------------------------------------------
+  83          // LPM_Disable_Wakeup ()
+  84          //-----------------------------------------------------------------------------
+  85          //
+  86          // Return Value : None
+  87          // Parameters   : None
+  88          //
+  89          // This function will disable wakeup sources
+  90          //
+  91          //-----------------------------------------------------------------------------
+  92          void LPM_Disable_Wakeup (U8 wakeup)
+  93          {
+  94   1        PMU0CF_Local &= ~(wakeup & (RTC | PORT_MATCH | COMPARATOR));
+  95   1      }
+  96          
+  97          //-----------------------------------------------------------------------------
+  98          // LPM
+  99          //-----------------------------------------------------------------------------
+ 100          //
+ 101          // Return Value : none
+ 102          // Parameters   : 1) U8 mode -- can be SLEEP or SUSPEND
+ 103          //
+ 104          // This function places the device in a low power mode
+ 105          //
+ 106          //-----------------------------------------------------------------------------
+ 107          void LPM(U8 mode)
+ 108          {
+ 109   1         U8 b;
+ 110   1         U8 CLKSEL_save;
+ 111   1         U8 EA_save;
+ 112   1         U8 PMU0CF_snapshot;
+ 113   1         U8 RTC0CN_snapshot;
+ 114   1      
+C51 COMPILER V9.53.0.0   POWER                                                             04/29/2018 23:54:57 PAGE 3   
+
+ 115   1         // Save current interrupt state and disable interrupts 
+ 116   1         EA_save = IE_EA;
+ 117   1         IE_EA = 0;
+ 118   1         
+ 119   1         // Save current system clock selection and select the low power oscillator
+ 120   1         // divided by 2 as the system clock
+ 121   1         CLKSEL_save = CLKSEL;
+ 122   1         CLKSEL = 0x14;
+ 123   1         
+ 124   1         // Enable the Flash read one-shot timer   
+ 125   1         FLSCL &= ~BYPASS;                   // Clear the one-shot bypass bit
+ 126   1         FLWR  =   NON_ZERO;                 // Write a "dummy" value to FLWR
+ 127   1         
+ 128   1         // Verify that the system clock setting has been applied
+ 129   1         while(!(CLKSEL & 0x80));            // Wait until CLKRDY -> 1
+ 130   1         
+ 131   1         //----------------------------------
+ 132   1         // ~~~ Device in Low Power Mode ~~~
+ 133   1         //
+ 134   1             PMU0CF = (mode | PMU0CF_Local);
+ 135   1         //
+ 136   1         // ~~~   Device is now Awake    ~~~
+ 137   1         //----------------------------------
+ 138   1         
+ 139   1         // Restore the System Clock
+ 140   1         CLKSEL = CLKSEL_save;
+ 141   1         
+ 142   1         // Disable (Bypass) the Flash Read one-shot timer if the system clock
+ 143   1         // frequency is higher than 10 MHz
+ 144   1         if(SYSCLK > 10000000)
+ 145   1         {
+ 146   2            FLSCL |= BYPASS;                 // Set the one-shot bypass bit                     
+ 147   2         }
+ 148   1        
+ 149   1         // Capture the wake-up source and clear all wake-up source flags   
+ 150   1         PMU0CF_snapshot = PMU0CF;
+ 151   1         PMU0CF = CLEAR;
+ 152   1      
+ 153   1         // Capture RTC events that occured while PMU0CF was being cleared
+ 154   1         RTC0CN_snapshot = RTC_Read(RTC0CN); 
+ 155   1      
+ 156   1         // If an RTC Alarm occured while PMU0CF was being cleared, clear 
+ 157   1         // the PCU0CF flag again   
+ 158   1         if(RTC0CN_snapshot & (ALRM) && ((PMU0CF_snapshot & RTCAWK) == 0))
+ 159   1         {
+ 160   2            PMU0CF_snapshot |= PMU0CF;
+ 161   2            PMU0CF = CLEAR;
+ 162   2         }
+ 163   1      
+ 164   1         //----------------------------------
+ 165   1         // Decode Wake-Up Sources
+ 166   1         //----------------------------------
+ 167   1      
+ 168   1         // Check for an RTC Alarm
+ 169   1         if((PMU0CF_snapshot & RTCAWK) || (RTC0CN_snapshot & ALRM))
+ 170   1         {
+ 171   2            RTC_Alarm = 1;
+ 172   2         }
+ 173   1         // Check for an RTC Clock Failure
+ 174   1         if((PMU0CF_snapshot & RTCFWK) || (RTC0CN_snapshot & OSCFAIL))
+ 175   1         {
+ 176   2            RTC_Failure = 1;  
+ 177   2         }
+C51 COMPILER V9.53.0.0   POWER                                                             04/29/2018 23:54:57 PAGE 4   
+
+ 178   1         // Check for a Port Match Wakeup
+ 179   1         if(PMU0CF_snapshot & PMATWK)
+ 180   1         {
+ 181   2            Port_Match_Wakeup = 1;  
+ 182   2         }
+ 183   1         // Check for a Comparator Wakeup
+ 184   1         if(PMU0CF_snapshot & CPT0WK)
+ 185   1         {
+ 186   2            Comparator_Wakeup = 1;  
+ 187   2         }
+ 188   1         
+ 189   1         // Restore Interrupt State
+ 190   1         IE_EA = EA_save;
+ 191   1         
+ 192   1         // Check for a reset pin Wakeup
+ 193   1         if(PMU0CF_snapshot & RSTWK)
+ 194   1         {
+ 195   2            // Delay 15uS per datasheet recommendation
+ 196   2            for(b = 255; b > 0; b--);
+ 197   2         }
+ 198   1          
+ 199   1      }               
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    145    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      5       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

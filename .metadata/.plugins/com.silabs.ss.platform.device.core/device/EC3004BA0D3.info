@@ -1,0 +1,4 @@
+protectFromDetectionUpdates=false
+label=USB Debug Adapter (EC3004BA0D3)
+boardOverrides {
+}

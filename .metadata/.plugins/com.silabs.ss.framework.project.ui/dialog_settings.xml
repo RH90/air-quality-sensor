@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="com.silabs.ss.framework.ide.project.core.cdtMbsProjectType">
+		<item value="com.silabs.ss.framework.ide.project.ui.exampleWizardType" key="projectTypeId"/>
+		<item value="LINK_LIBRARIES" key="settingImportModeOption"/>
+		<item value="true" key="filterTemplatesByPartSdk"/>
+		<item value="projectTemplate.com.silabs.sdk.8051:4.1.1._-963069327.C-\SiliconLabs\SimplicityStudio\v4\developer\sdks\8051\v4.1.1\examples\C8051F996DK\ADC\F99x_ADC0_12bit_ExternalInput\SimplicityStudio\F99x-98x_ADC0_12bit_ExternalInput.slsproj" key="selectedTemplateId"/>
+		<item value="true" key="filterTemplatesByToolchain"/>
+	</section>
+</section>
